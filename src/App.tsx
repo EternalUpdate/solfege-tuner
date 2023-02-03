@@ -110,7 +110,7 @@ function App() {
             analyser.current.getFloatTimeDomainData(buffer);
 
             // find the pitch using the YIN algorithm
-            const detectPitch = Pitchfinder.YIN({});
+            const detectPitch = Pitchfinder.YIN({ threshold: 0.01 });
             const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
 
             console.log(pitch);
