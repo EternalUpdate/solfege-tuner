@@ -36,17 +36,15 @@ function App() {
             })
             .then((stream) => {
                 // got the audio stream
-                if (audioContext) {
-                    // create the media stream source and the analyser
-                    mediaStreamSource.current =
-                        audioContext.createMediaStreamSource(stream);
+                // create the media stream source and the analyser
+                mediaStreamSource.current =
+                    audioContext.createMediaStreamSource(stream);
 
-                    // connect the media stream source to the analyser
-                    mediaStreamSource.current.connect(analyser);
+                // connect the media stream source to the analyser
+                mediaStreamSource.current.connect(analyser);
 
-                    // ready to analyze the pitch of the audio now
-                    updatePitch();
-                }
+                // ready to analyze the pitch of the audio now
+                updatePitch();
             })
             .catch((err) => {
                 alert("getUserMedia threw exception: " + err);
@@ -68,7 +66,7 @@ function App() {
             // const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
 
             // find the pitch using the autocorrelation algorithm
-            const pitch = autoCorrelate(buffer, 44100);
+            const pitch = autoCorrelate(buffer, audioContext.sampleRate);
 
             console.log(pitch);
 
