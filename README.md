@@ -18,9 +18,7 @@ https://solfege-tuner.netlify.app/
 ## Possible Improvements
 * Making the display of pitch, notes, and solfege syllables less jerky so that users can anticipate when the pitch is about to change, perhaps with a visual
 * Adding a visual corresponding to audio input, so that the user has more feedback that the app is working
-
-## Bugs
-* The pitch detection seems to be one semitone down on any device that is not my desktop. Working on a fix.
+* Convert into a PWA for offline use
 
 ## Acknowledgements
 The following open source projects were used as references to learn how to use the WebAudioAPI:
