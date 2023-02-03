@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import "./App.css";
 import * as Pitchfinder from "pitchfinder";
 import { Note } from "tonal";
+import autoCorrelate from "./PitchDetectionAlgorithms/AutoCorrelate.js";
 
 // flat and sharp chromatic scales to figure out the solfege
 const flatChromatics = [
@@ -54,7 +55,7 @@ function App() {
     const [root, setRoot] = useState("C");
 
     // useRef() to keep these between renders
-    const audioContext = useRef<AudioContext>();
+    let audioContext = useRef<AudioContext>();
     const analyser = useRef<AnalyserNode>();
     const mediaStreamSource = useRef<MediaStreamAudioSourceNode>();
 
@@ -81,6 +82,7 @@ function App() {
                     mediaStreamSource.current =
                         audioContext.current.createMediaStreamSource(stream);
                     analyser.current = audioContext.current.createAnalyser();
+                    analyser.current.smoothingTimeConstant = 0.85;
                     // connect the media stream source to the analyser
                     mediaStreamSource.current.connect(analyser.current);
 
@@ -110,14 +112,16 @@ function App() {
             analyser.current.getFloatTimeDomainData(buffer);
 
             // find the pitch using the YIN algorithm
-            const detectPitch = Pitchfinder.YIN({ threshold: 0.01 });
-            const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
+            // const detectPitch = Pitchfinder.YIN({ threshold: 0.01 });
+            // const detectPitch = Pitchfinder.ACF2PLUS();
+            // const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
+            const pitch = autoCorrelate(buffer, 44100);
 
             console.log(pitch);
 
             if (pitch) {
                 // exclude extremely high frequencies captured
-                if (pitch < 7000) {
+                if (pitch < 7000 && pitch > -1) {
                     setPitch(pitch.toFixed(2)); // limit to 2 decimal places for sanity
                     const note = Note.fromFreq(pitch);
                     setNote(note);
@@ -137,6 +141,8 @@ function App() {
     function init() {
         // making sure the audio context is created from a user action
         // as requested by new web standards
+        (window as any).AudioContext =
+            (window as any).AudioContext || (window as any).webkitAudioContext;
         audioContext.current = new AudioContext();
 
         // ready to get mic audio
