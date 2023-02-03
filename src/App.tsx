@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import "./App.css";
-import * as Pitchfinder from "pitchfinder";
+// import * as Pitchfinder from "pitchfinder";
 import { Note } from "tonal";
 import autoCorrelate from "./PitchDetectionAlgorithms/AutoCorrelate.js";
 import { flatChromatics, getSolfege } from "./utils/Solfege";
+import AppAudioContext from "./utils/Context";
 
 function App() {
     const [pitch, setPitch] = useState("261.63");
@@ -12,8 +13,9 @@ function App() {
     const [root, setRoot] = useState("C");
 
     // useRef() to keep these between renders
-    let audioContext = useRef<AudioContext>();
-    const analyser = useRef<AnalyserNode>();
+    const audioContext = AppAudioContext.getAudioContext();
+    const analyser = AppAudioContext.getAnalyser();
+    const buffer = AppAudioContext.getBuffer();
     const mediaStreamSource = useRef<MediaStreamAudioSourceNode>();
 
     /**
@@ -34,14 +36,13 @@ function App() {
             })
             .then((stream) => {
                 // got the audio stream
-                if (audioContext.current) {
+                if (audioContext) {
                     // create the media stream source and the analyser
                     mediaStreamSource.current =
-                        audioContext.current.createMediaStreamSource(stream);
-                    analyser.current = audioContext.current.createAnalyser();
-                    analyser.current.smoothingTimeConstant = 0.85;
+                        audioContext.createMediaStreamSource(stream);
+
                     // connect the media stream source to the analyser
-                    mediaStreamSource.current.connect(analyser.current);
+                    mediaStreamSource.current.connect(analyser);
 
                     // ready to analyze the pitch of the audio now
                     updatePitch();
@@ -59,18 +60,14 @@ function App() {
      * https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getFloatTimeDomainData
      */
     function updatePitch() {
-        if (analyser.current) {
-            // set analyzer settings
-            analyser.current.fftSize = 2048;
-            const bufferLength = analyser.current.fftSize;
-            const buffer = new Float32Array(bufferLength);
+        if (analyser) {
+            analyser.getFloatTimeDomainData(buffer);
 
-            analyser.current.getFloatTimeDomainData(buffer);
-
-            // find the pitch using the autocorrelation algorithm
             // const detectPitch = Pitchfinder.YIN({ threshold: 0.01 });
             // const detectPitch = Pitchfinder.ACF2PLUS();
             // const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
+
+            // find the pitch using the autocorrelation algorithm
             const pitch = autoCorrelate(buffer, 44100);
 
             console.log(pitch);
@@ -97,9 +94,7 @@ function App() {
     function init() {
         // making sure the audio context is created from a user action
         // as requested by new web standards
-        (window as any).AudioContext =
-            (window as any).AudioContext || (window as any).webkitAudioContext;
-        audioContext.current = new AudioContext();
+        audioContext.resume();
 
         // ready to get mic audio
         getUserMedia();
@@ -126,7 +121,7 @@ function App() {
      * so that the solfege can be calculated with the new root.
      */
     useEffect(() => {
-        if (mediaStreamSource.current && analyser.current) {
+        if (mediaStreamSource.current && analyser) {
             updatePitch();
         }
     }, [root]);
