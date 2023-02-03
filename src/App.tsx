@@ -48,10 +48,10 @@ const solfegeSyllables = [
 ];
 
 function App() {
-    const [pitch, setPitch] = useState("Press Start");
+    const [pitch, setPitch] = useState("");
     const [note, setNote] = useState("Note");
     const [solfege, setSolfege] = useState("Solfege");
-    const [root, setRoot] = useState("F");
+    const [root, setRoot] = useState("C");
 
     // useRef() to keep these between renders
     const audioContext = useRef<AudioContext>();
@@ -223,9 +223,11 @@ function App() {
     return (
         <div className="App">
             <div className="info-container">
-                <div id="note">{note}</div>
+                <div className="note-container">
+                    <div id="note">{note}</div>
+                    <div id="pitch">{`${pitch} Hz`}</div>
+                </div>
                 <div id="solfege">{solfege}</div>
-                <div id="pitch">{pitch}</div>
             </div>
             <button
                 id="start-button"
@@ -246,8 +248,14 @@ function App() {
             </button> */}
             <div className="scale-container">
                 <div>Choose a scale:</div>
-                <div id="root">{root}</div>
+                {/* <div id="root">{root}</div> */}
                 <div className="button-container">{scaleButtons}</div>
+            </div>
+            <div className="footer">
+                Brought to you by{" "}
+                <a href="https://github.com/EternalUpdate/solfege-tuner">
+                    @EternalUpdate
+                </a>
             </div>
         </div>
     );

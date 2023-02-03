@@ -13,21 +13,73 @@
 
 .info-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   margin-bottom: 5rem;
+  gap: 5rem;
+}
+
+.note-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.scale-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.1rem;
 }
 
 .button-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  font-size: 1.4rem;
 }
 
-.card {
-  padding: 2em;
+.footer {
+  margin-top: 6rem;
+  font-size: 0.7rem;
+}
+
+#note {
+  font-size: 6rem;
+}
+
+#solfege {
+  font-size: 4.5rem;
+}
+
+#pitch {
+  font-style: italic;
+  font-size: 0.9rem;
 }
 
 #start-button {
-  width: 7rem;
+  width: 9rem;
+  margin-bottom: 5rem;
+  font-size: 1.5rem;
+}
+
+@media only screen and (max-width: 400px) {
+  .button-container {
+    font-size: 1.2rem;
+  }
+
+  #note {
+    font-size: 5rem;
+  }
+
+  #solfege {
+    font-size: 4rem;
+  }
+
+  #start-button {
+    font-size: 1.3rem;
+  }
 }
