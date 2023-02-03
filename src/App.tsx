@@ -3,50 +3,7 @@ import "./App.css";
 import * as Pitchfinder from "pitchfinder";
 import { Note } from "tonal";
 import autoCorrelate from "./PitchDetectionAlgorithms/AutoCorrelate.js";
-
-// flat and sharp chromatic scales to figure out the solfege
-const flatChromatics = [
-    "C",
-    "Db",
-    "D",
-    "Eb",
-    "E",
-    "F",
-    "Gb",
-    "G",
-    "Ab",
-    "A",
-    "Bb",
-    "B",
-];
-const sharpChromatics = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B",
-];
-const solfegeSyllables = [
-    "do",
-    "ra",
-    "re",
-    "me",
-    "mi",
-    "fa",
-    "se",
-    "sol",
-    "le",
-    "la",
-    "te",
-    "ti",
-];
+import { flatChromatics, getSolfege } from "./utils/Solfege";
 
 function App() {
     const [pitch, setPitch] = useState("261.63");
@@ -96,8 +53,7 @@ function App() {
     }
 
     /**
-     * Updates the detected pitch of the audio using the YIN algorithm
-     * as implemented in the Pitchfinder.js library.
+     * Updates the detected pitch of the audio using the autocorrelation algorithm.
      *
      * resource for using WebAudioAPI's analyzer:
      * https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getFloatTimeDomainData
@@ -111,7 +67,7 @@ function App() {
 
             analyser.current.getFloatTimeDomainData(buffer);
 
-            // find the pitch using the YIN algorithm
+            // find the pitch using the autocorrelation algorithm
             // const detectPitch = Pitchfinder.YIN({ threshold: 0.01 });
             // const detectPitch = Pitchfinder.ACF2PLUS();
             // const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
@@ -125,7 +81,7 @@ function App() {
                     setPitch(pitch.toFixed(2)); // limit to 2 decimal places for sanity
                     const note = Note.fromFreq(pitch);
                     setNote(note);
-                    setSolfege(getSolfege(note));
+                    setSolfege(getSolfege(note, root));
                 }
             }
 
@@ -147,57 +103,6 @@ function App() {
 
         // ready to get mic audio
         getUserMedia();
-    }
-
-    /**
-     * Returns the flat chromatic scale starting from the root note.
-     * @returns the flat chromatic scale starting from the root note
-     */
-    function getChromaticScale() {
-        let startIndex = 0;
-        let chromaticScale = [];
-
-        // match the root with either flat or sharp chromatics
-        if (flatChromatics.includes(root)) {
-            startIndex = flatChromatics.indexOf(root);
-        } else if (sharpChromatics.includes(root)) {
-            startIndex = sharpChromatics.indexOf(root);
-        }
-
-        // build the flat chromatic scale starting from the root
-        for (let i = 0; i < flatChromatics.length; i++) {
-            chromaticScale.push(
-                // wrap around the scale with the magic of modulo
-                flatChromatics[(startIndex + i) % flatChromatics.length]
-            );
-        }
-
-        return chromaticScale;
-    }
-
-    /**
-     * Get the solfege syllable corresponding to note identified in the real time audio
-     * based on the scale of the given root note.
-     * It is based on the major scale.
-     * e.g. Eb with a root note of C will result in the solfege syllable "me".
-     *
-     * @param note identified from the analysis of the microphone audio
-     * @returns the solfege syllable corresponding to note identified in the real time audio
-     * based on the scale of the given root note
-     */
-    function getSolfege(note: string) {
-        // get the version of the chromatic scale starting from the root note
-        const chromaticScale = getChromaticScale();
-
-        // strip numbers from the note e.g. A4 => A
-        const cleanNote = note.replace(/\d+/g, "");
-
-        // with the chromatic scale in order, the solfege syllables will match perfectly
-        // e.g. [F, Gb, G, Ab, A, Bb, B, C, ...] => [do, ra, re, me, mi, fa, se, sol, ...]
-        const noteIndex = chromaticScale.indexOf(cleanNote);
-        const matchedSolfege = solfegeSyllables[noteIndex];
-
-        return matchedSolfege;
     }
 
     /**
