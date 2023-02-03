@@ -48,9 +48,9 @@ const solfegeSyllables = [
 ];
 
 function App() {
-    const [pitch, setPitch] = useState("");
-    const [note, setNote] = useState("Note");
-    const [solfege, setSolfege] = useState("Solfege");
+    const [pitch, setPitch] = useState("261.63");
+    const [note, setNote] = useState("C");
+    const [solfege, setSolfege] = useState("Do");
     const [root, setRoot] = useState("C");
 
     // useRef() to keep these between renders
@@ -113,7 +113,7 @@ function App() {
             const detectPitch = Pitchfinder.YIN({});
             const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
 
-            // console.log(pitch);
+            console.log(pitch);
 
             if (pitch) {
                 // exclude extremely high frequencies captured
