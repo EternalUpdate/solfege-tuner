@@ -1,7 +1,7 @@
 # solfege-tuner
 This is a tuner web app that attempts to show the solfege syllable that is played / sung in real-time, corresponding to a user-chosen scale.
 
-Microphone audio is captured using the [WebAudioAPI](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) and this audio is analyzed using the YIN pitch detection algorithm using the [pitchfinder.js](https://github.com/peterkhayes/pitchfinder) library. 
+Microphone audio is captured using the [WebAudioAPI](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) and this audio is analyzed using the autocorrelation pitch detection algorithm found in the projects acknowledged below. The [pitchfinder.js](https://github.com/peterkhayes/pitchfinder) library also offers a variety of other pitch detection algorithm, such as the YIN algorithm. 
 
 Some very limited use is made of the [tonal.js](https://github.com/tonaljs/tonal) library, but at this place it could easily be replaced by a single function.
 
@@ -16,9 +16,11 @@ This is meant as an educational tool.
 https://solfege-tuner.netlify.app/
 
 ## Possible Improvements
-* Improving pitch detection so that it detects lower pitches better
 * Making the display of pitch, notes, and solfege syllables less jerky so that users can anticipate when the pitch is about to change, perhaps with a visual
 * Adding a visual corresponding to audio input, so that the user has more feedback that the app is working
+
+## Bugs
+* The pitch detection seems to be one semitone down on any device that is not my desktop. Working on a fix.
 
 ## Acknowledgements
 The following open source projects were used as references to learn how to use the WebAudioAPI:
