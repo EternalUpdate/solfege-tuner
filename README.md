@@ -10,4 +10,7 @@ This is meant as an educational tool.
 ## Installation
 `npm install` the dependencies, and `npm run dev`.
 
+## Link
+https://solfege-tuner.netlify.app/
+
 
