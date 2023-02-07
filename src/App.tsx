@@ -11,12 +11,15 @@ function App() {
     const [note, setNote] = useState("C");
     const [solfege, setSolfege] = useState("Do");
     const [root, setRoot] = useState("C");
+    const [started, setStarted] = useState(false);
 
-    // useRef() to keep these between renders
     const audioContext = AppAudioContext.getAudioContext();
     const analyser = AppAudioContext.getAnalyser();
     const buffer = AppAudioContext.getBuffer();
+    // useRef() to keep these between renders
     const mediaStreamSource = useRef<MediaStreamAudioSourceNode>();
+    // keeps track of the current request to avoid concurrent instances of updatePitch() like a semaphore
+    const requestId = useRef<number | undefined>();
 
     /**
      * Connects to the computer's microphone and gets the audio stream.
@@ -51,6 +54,9 @@ function App() {
             });
     }
 
+    // debugging metric to track separate instances of updatePitch()
+    // let testCount = 0;
+
     /**
      * Updates the detected pitch of the audio using the autocorrelation algorithm.
      *
@@ -58,9 +64,14 @@ function App() {
      * https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getFloatTimeDomainData
      */
     function updatePitch() {
+        // updatePitch() not in use, set current requestId to undefined
+        requestId.current = undefined;
+
+        // go about our business
         if (analyser) {
             analyser.getFloatTimeDomainData(buffer);
 
+            // pitchfinder.js alternatives
             // const detectPitch = Pitchfinder.YIN({ threshold: 0.01 });
             // const detectPitch = Pitchfinder.ACF2PLUS();
             // const pitch = detectPitch(buffer); // doesn't detect below F2, poor bass detection
@@ -68,7 +79,7 @@ function App() {
             // find the pitch using the autocorrelation algorithm
             const pitch = autoCorrelate(buffer, audioContext.sampleRate);
 
-            console.log(pitch);
+            // console.log(pitch);
 
             if (pitch) {
                 // exclude extremely high frequencies captured
@@ -76,12 +87,13 @@ function App() {
                     setPitch(pitch.toFixed(2)); // limit to 2 decimal places for sanity
                     const note = Note.fromFreq(pitch);
                     setNote(note);
+                    // console.log(`testCount: ${testCount++}\troot: ${root}`);
                     setSolfege(getSolfege(note, root));
                 }
             }
 
-            // request next animation frame and call updatePitch() again
-            requestAnimationFrame(updatePitch);
+            // all done, go to our loop handler
+            startLoop();
         }
     }
 
@@ -93,9 +105,53 @@ function App() {
         // making sure the audio context is created from a user action
         // as requested by new web standards
         audioContext.resume();
+        setStarted(true);
 
-        // ready to get mic audio
-        getUserMedia();
+        if (!mediaStreamSource.current) {
+            // ready to get mic audio
+            getUserMedia();
+        } else {
+            mediaStreamSource.current.connect(analyser);
+            updatePitch();
+        }
+    }
+
+    /**
+     * Gatekeeper to starting the updatePitch() loop so that there's one request at a time.
+     * Fixes the multiple instances per new key bug.
+     */
+    function startLoop() {
+        // ensure that updatePitch() can only be recursed on if its not busy
+        // (current requestId is free)
+        if (!requestId.current) {
+            // request next animation frame and call updatePitch() again
+            requestId.current = window.requestAnimationFrame(updatePitch);
+        }
+    }
+
+    /**
+     * Stops the updatePitch() loop so that there aren't multiple instances running at once (e.g. one per key, which throws off the solfege).
+     */
+    function stopLoop() {
+        // can only access this if you own the requestId
+        if (requestId.current) {
+            window.cancelAnimationFrame(requestId.current);
+            // loop cancelled, give the requestId back (set to undefined) so that someone else can use it!
+            requestId.current = undefined;
+        }
+    }
+
+    /**
+     * Stops analysis by interrupting the updatePitch() loop
+     * and disconnecting the input stream from the analyser.
+     * The microphone does stay connected though.
+     *
+     * Mostly serves to keep the stop button function distinct from the pure stopLoop() functionality.
+     */
+    function stopAnalysing() {
+        stopLoop();
+        mediaStreamSource.current?.disconnect(analyser);
+        setStarted(false);
     }
 
     /**
@@ -120,6 +176,7 @@ function App() {
      */
     useEffect(() => {
         if (mediaStreamSource.current && analyser) {
+            stopLoop();
             updatePitch();
         }
     }, [root]);
@@ -134,30 +191,27 @@ function App() {
                 <div id="solfege">{solfege}</div>
             </div>
             <button
+                onClick={() => {
+                    started ? stopAnalysing() : init();
+                }}
                 id="start-button"
-                onClick={() => {
-                    init();
-                }}
             >
-                Start
+                {started ? "Stop" : "Start"}
             </button>
-            {/* <button
-                onClick={() => {
-                    if (mediaStreamSource.current && analyser.current) {
-                        mediaStreamSource.current.disconnect(analyser.current);
-                    }
-                }}
-            >
-                Stop
-            </button> */}
-            <div className="scale-container">
-                <div>Choose a scale:</div>
-                {/* <div id="root">{root}</div> */}
+            <div className="key-container">
+                <div>Choose a key:</div>
                 <div className="button-container">{scaleButtons}</div>
             </div>
+            {/* <p className="subtitle">
+                Refresh the page or close the window to stop using the
+                microphone.
+            </p> */}
             <div className="footer">
                 Brought to you by{" "}
-                <a href="https://github.com/EternalUpdate/solfege-tuner">
+                <a
+                    href="https://github.com/EternalUpdate/solfege-tuner"
+                    target="_blank"
+                >
                     @EternalUpdate
                 </a>
             </div>
